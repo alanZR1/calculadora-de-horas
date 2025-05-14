@@ -1,19 +1,27 @@
 import flet as ft
-from . import logic
-from . import ui_components
+from calculadoraHoras.logic import (cargar_cronograma,
+    guardar_cronograma, calcular_horas_en_periodo,
+    agregar_actividad, eliminar_actividad, modificar_actividad)
+from calculadoraHoras.ui_components import crear_interfaz
 
 def main(page: ft.Page):
     page.title = "Calculadora de Horas de Servicio Social"
-    page.theme_mode = ft.ThemeMode.LIGHT
     page.vertical_alignment = ft.MainAxisAlignment.START
     page.scroll = ft.ScrollMode.AUTO
 
-    # Creamos la interfaz (inputs, botones, texto, etc.)
-    interfaz = ui_components.crear_interfaz(page, logic.calcular_total)
+    # Cargar cronograma al iniciar
+    cronograma = cargar_cronograma()
 
-    # Agregamos los componentes a la página
+    interfaz = crear_interfaz(
+        page,
+        cronograma,
+        agregar_actividad,
+        guardar_cronograma,
+        calcular_horas_en_periodo,
+        eliminar_actividad,
+        modificar_actividad
+    )
     page.add(*interfaz)
 
-# Lanzamos la app (modo navegador)
 if __name__ == "__main__":
-    ft.app(target=main, view=ft.WEB_BROWSER)
+    ft.app(target=main)  # Ejecuta como app de escritorio
