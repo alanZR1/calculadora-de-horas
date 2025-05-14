@@ -1,0 +1,10 @@
+# Entorno virtual
+venv/
+
+# Caché de Python
+__pycache__/
+*.py[cod]
+
+# Archivos del sistema
+.DS_Store
+*.log
