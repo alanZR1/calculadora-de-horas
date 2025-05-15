@@ -72,11 +72,11 @@ def calcular_horas_en_periodo(cronograma, desde, hasta):
         return 0, 0, f"Error: {e}"
     
     
-def eliminar_actividad(cronograma, nombre):
+def eliminar_actividad(cronograma, index):
     try: 
-        del cronograma[nombre]
+        del cronograma[index]
         return "Actividad eliminada."
-    except KeyError:
+    except IndexError:
         return "Actividad no encontrada."
     
 def modificar_actividad(cronograma,index, nombre, fecha_inicio, fecha_fin, horas):
