@@ -1,33 +1,62 @@
 import flet as ft
 
 def crear_interfaz(page, cronograma, agregar_actividad_fn, guardar_fn, calcular_fn, eliminar_fn=None, modificar_fn=None):
+    # controles 
     nombre = ft.TextField(label="Nombre de actividad")
     inicio = ft.TextField(label="Fecha inicio (YYYY-MM-DD)")
     fin = ft.TextField(label="Fecha fin (YYYY-MM-DD)")
     horas = ft.TextField(label="Horas totales")
     mensaje = ft.Text(value="")
-
+    # controles para consultar las fechas
     desde = ft.TextField(label="Desde (YYYY-MM-DD)")
     hasta = ft.TextField(label="Hasta (YYYY-MM-DD)")
     resultado = ft.Text(value="")
     
-    tabla_cronograma = ft.Column()
+    # tabla para mostrar actividades
+    tabla_cronograma = ft.DataTable(
+        columns=[
+            ft.DataColumn(ft.Text("Actividad")),
+            ft.DataColumn(ft.Text("Fecha Inicio")), 
+            ft.DataColumn(ft.Text("Fecha Fin")),
+            ft.DataColumn(ft.Text("Horas")),
+            ft.DataColumn(ft.Text("Modificar")),
+            ft.DataColumn(ft.Text("Eliminar"))
+        ],
+        rows=[],
+        expand = True
+    )
     
     def actualizar_tabla():
-        tabla_cronograma.controls = []
+        rows = []
         for idx, act in enumerate(cronograma):
-            fila = ft.Row([
-                ft.Text(f"{act['nombre']}"),
-                ft.Text(f"{act['inicio']}"),
-                ft.Text(f"{act['fin']}"),
-                ft.Text(f"{act['horas']}"),
-                ft.ElevatedButton("Editar", on_click=lambda e, idx=idx: editar_actividad(idx)),
-                ft.ElevatedButton("Eliminar", on_click=lambda e, idx=idx: eliminar_actividad(idx))
-                ])
-        tabla_cronograma.controls.append(fila)
+            rows.append(
+                ft. DataRow(
+                    cells=[
+                        ft.DataCell(ft.Text(act['nombre'])),
+                        ft.DataCell(ft.Text(act['inicio'])),
+                        ft.DataCell(ft.Text(act['fin'])),
+                        ft.DataCell(ft.Text(str(act['horas']))),
+                        ft.DataCell(ft.Row([
+                            ft.ElevatedButton("editar", on_click=lambda e, idx=idx: modificar_actividad(idx)),
+                            ft.ElevatedButton("eliminar", on_click=lambda e, idx=idx: eliminar_actividad(idx)
+                                              , color=ft.colors.RED_400)
+                            
+                        ], spacing=5))
+                    ]
+                    
+                )
+            )
+        tabla_cronograma.rows = rows
+        page.update()
         
     def on_agregar(e):
-        msj = agregar_actividad_fn(cronograma, nombre.value, inicio.value, fin.value, horas.value)
+        msj = agregar_actividad_fn(
+            cronograma,
+            nombre.value,
+            inicio.value,
+            fin.value,
+            horas.value
+            )
         guardar_fn(cronograma)
         mensaje.value = msj
         nombre.value = inicio.value = fin.value = horas.value = ""
@@ -42,13 +71,12 @@ def crear_interfaz(page, cronograma, agregar_actividad_fn, guardar_fn, calcular_
         page.update()
         
     def eliminar_actividad(index):
-        msj = eliminar_fn(index)
-        guardar_fn(cronograma)
         mensaje.value = eliminar_fn(cronograma, index)
+        guardar_fn(cronograma)
         actualizar_tabla()
         page.update()
         
-    def editar_actividad(index):
+    def modificar_actividad(index):
         act = cronograma[index]
         nombre.value = act['nombre']
         inicio.value = act['inicio']
@@ -56,29 +84,62 @@ def crear_interfaz(page, cronograma, agregar_actividad_fn, guardar_fn, calcular_
         horas.value = act['horas']
         
         def confirmar_edicion(e):
+            mensaje.value = modificar_fn(
+                cronograma,
+                index,
+                nombre.value,
+                inicio.value,
+                fin.value,
+                horas.value
+                )
             guardar_fn(cronograma)
-            mensaje.value = modificar_fn(cronograma, index, nombre.value, inicio.value, fin.value, horas.value)
-            actualizar_tabla()
             nombre.value = inicio.value = fin.value = horas.value = ""
-            page.update()
-            btn_guardar_edicion.visible = False
+            actualizar_tabla()
            
 
         btn_guardar_edicion.visible = True
-        btn_guardar_edicion.on_click = True
+        btn_guardar_edicion.on_click = confirmar_edicion
+        page.update()
     
     btn_guardar_edicion = ft.ElevatedButton("Guardar Edición", visible = False)
     
     actualizar_tabla()
         
-    return [
-        ft.Text("Agregar Actividad", size=20, weight="bold"),
-        nombre, inicio, fin, horas,
-        ft.ElevatedButton("Agregar", on_click=on_agregar),
-        mensaje,
-        ft.Divider(),
-        ft.Text("Consultar Horas", size=20, weight="bold"),
-        desde, hasta,
-        ft.ElevatedButton("Consultar", on_click=on_consultar),
-        resultado
-    ]
+    return ft.Column(
+        controls=[
+            ft.Card(
+                content=ft.Container(
+                    content=ft.Column([
+                        ft.Text("Agregar Actividad", size=20, weight="bold"),
+                        ft.Row([nombre, inicio, fin, horas], spacing=10),
+                        ft.ElevatedButton("Agregar", on_click=on_agregar, icon=ft.Icons.ADD),
+                        mensaje
+                    ]),
+                    padding=15
+                )
+            ),
+            ft.Card(
+                content=ft.Container(
+                    content=ft.Column([
+                        ft.Text("Consultar Horas", size=20, weight="bold"),
+                        ft.Row([desde, hasta], spacing=10),
+                        ft.ElevatedButton("Consultar", on_click=on_consultar, icon=ft.Icons.CALCULATE),
+                        resultado
+                    ]),
+                    padding=15
+                )
+            ),
+            ft.Text("Cronograma", size=20, weight="bold"),
+            ft.Container(
+                content=tabla_cronograma,
+                border=ft.border.all(1, ft.Colors.GREY_300),
+                border_radius=5,
+                padding=10,
+                expand=True
+            ),
+            btn_guardar_edicion
+        ],
+        spacing=20,
+        expand=True,
+        scroll=ft.ScrollMode.AUTO
+    )
